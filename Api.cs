@@ -57,8 +57,22 @@ namespace GenericModConfigMenu
 
     public class Api : IApi
     {
+        internal static Action<string, LogLevel> apiLog;
+
         public void RegisterModConfig(IManifest mod, Action revertToDefault, Action saveToFile)
         {
+            if (mod is null) {
+                apiLog("mod is null! Who called me??", LogLevel.Error);
+                throw new ArgumentNullException("mod");
+                }
+            if (revertToDefault is null) {
+                apiLog($"{mod.UniqueID} gave null revertToDefault!", LogLevel.Error);
+                throw new ArgumentNullException("revertToDefault");
+                }
+            if (saveToFile is null) {
+                apiLog($"{mod.UniqueID} gave null saveToFile!", LogLevel.Error);
+                throw new ArgumentNullException("saveToFile");
+                }
             if (Mod.instance.configs.ContainsKey(mod))
                 throw new ArgumentException("Mod already registered");
             Mod.instance.configs.Add(mod, new ModConfig(mod, revertToDefault, saveToFile));
