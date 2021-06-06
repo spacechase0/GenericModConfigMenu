@@ -35,7 +35,7 @@ namespace GenericModConfigMenu
 
             Texture2D tex = Helper.Content.Load<Texture2D>("assets/config-button.png");
             configButton = new Button(tex) {
-                LocalPosition = new Vector2(36, Game1.uiViewport.Height - 100),
+                LocalPosition = new Vector2(36, Game1.viewport.Height - 100),
                 Callback =
                     (Element e) => {
                         Game1.playSound("newArtifact");
@@ -175,7 +175,7 @@ namespace GenericModConfigMenu
 
         private void onWindowResized(object sender, WindowResizedEventArgs e)
         {
-            configButton.LocalPosition = new Vector2(configButton.Position.X, Game1.uiViewport.Height - 100);
+            configButton.LocalPosition = new Vector2(configButton.Position.X, Game1.viewport.Height - 100);
         }
 
         private void onRendered(object sender, RenderedEventArgs e)

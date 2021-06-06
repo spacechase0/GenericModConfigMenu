@@ -46,8 +46,10 @@ namespace GenericModConfigMenu
 
             ui.AddChild(table);
 
-            if (ingame || Constants.TargetPlatform == GamePlatform.Android)
+            if (Constants.TargetPlatform == GamePlatform.Android)
                 initializeUpperRightCloseButton();
+            else
+                upperRightCloseButton = null;
 
             ActiveConfigMenu = this;
         }

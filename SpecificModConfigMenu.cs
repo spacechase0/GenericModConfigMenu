@@ -30,6 +30,8 @@ namespace GenericModConfigMenu
         private Dictionary<string, List<Image>> textures = new Dictionary<string, List<Image>>();
         private Queue<string> pendingTexChanges = new Queue<string>();
 
+        private bool DoingKeyBinding = false;
+
         public bool CanEdit<T>( IAssetInfo asset )
         {
             foreach ( var key in textures.Keys )
@@ -253,8 +255,7 @@ namespace GenericModConfigMenu
                     
                     
                     var localPos = new Vector2( table.Size.X / 2 - imgSize.X / 2, 0 );
-                    var baseRectPos = new Vector2( t.TextureRect.HasValue ? t.TextureRect.Value.X : 0,
-                                                   t.TextureRect.HasValue ? t.TextureRect.Value.Y : 0 );
+                    var baseRectPos = new Vector2( t.TextureRect?.X ?? 0, t.TextureRect?.Y ?? 0 );
 
                     var texs = new List<Image>();
                     if ( textures.ContainsKey( t.TexturePath ) )
@@ -412,6 +413,7 @@ namespace GenericModConfigMenu
 
             if (Constants.TargetPlatform != GamePlatform.Android)
             {
+                Mod.instance.Helper.Events.Input.ButtonReleased += CheckEscape;
                 foreach ( var label in optHovers )
                 {
                     if (!label.Hover)
@@ -469,11 +471,20 @@ namespace GenericModConfigMenu
             close();
         }
 
+        private void CheckEscape(object sender, ButtonReleasedEventArgs args) {
+            if (DoingKeyBinding) return;
+            if (args.Button.ToString() == "Escape") {
+                Mod.instance.Helper.Events.Input.ButtonReleased -= CheckEscape;
+                cancel();
+                }
+            }
+
         private SimpleModOption<SButton> keybindingOpt;
         private SimpleModOption<KeybindList> keybinding2Opt;
         private Label keybindingLabel;
         private void doKeybindingFor( SimpleModOption<SButton> opt, Label label )
         {
+            DoingKeyBinding = true;
             Game1.playSound("breathin");
             keybindingOpt = opt;
             keybindingLabel = label;
@@ -482,6 +493,7 @@ namespace GenericModConfigMenu
         }
         private void doKeybinding2For( SimpleModOption<KeybindList> opt, Label label )
         {
+            DoingKeyBinding = true;
             Game1.playSound( "breathin" );
             keybinding2Opt = opt;
             keybindingLabel = label;
@@ -491,6 +503,7 @@ namespace GenericModConfigMenu
 
         private void assignKeybinding(object sender, ButtonPressedEventArgs e)
         {
+            DoingKeyBinding = false;
             if ( keybindingOpt == null )
                 return;
             if ( !e.Button.TryGetKeyboard(out Keys keys) && !e.Button.TryGetController(out _) )
@@ -512,6 +525,7 @@ namespace GenericModConfigMenu
         }
         private void assignKeybinding2( object sender, ButtonsChangedEventArgs e )
         {
+            DoingKeyBinding = false;
             if ( keybinding2Opt == null )
                 return;
 
