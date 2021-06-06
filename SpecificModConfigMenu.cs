@@ -30,6 +30,8 @@ namespace GenericModConfigMenu
         private Dictionary<string, List<Image>> textures = new Dictionary<string, List<Image>>();
         private Queue<string> pendingTexChanges = new Queue<string>();
 
+        private bool DoingKeyBinding = false;
+
         public bool CanEdit<T>( IAssetInfo asset )
         {
             foreach ( var key in textures.Keys )
@@ -63,8 +65,8 @@ namespace GenericModConfigMenu
 
             table = new Table();
             table.RowHeight = 50;
-            table.Size = new Vector2(Math.Min(1200, Game1.viewport.Width - 200), Game1.viewport.Height - 128 - 116);
-            table.LocalPosition = new Vector2((Game1.viewport.Width - table.Size.X) / 2, (Game1.viewport.Height - table.Size.Y) / 2);
+            table.Size = new Vector2(Math.Min(1200, Game1.uiViewport.Width - 200), Game1.uiViewport.Height - 128 - 116);
+            table.LocalPosition = new Vector2((Game1.uiViewport.Width - table.Size.X) / 2, (Game1.uiViewport.Height - table.Size.Y) / 2);
             foreach (var opt in modConfig.Options[ page ].Options)
             {
                 opt.SyncToMod();
@@ -253,8 +255,7 @@ namespace GenericModConfigMenu
                     
                     
                     var localPos = new Vector2( table.Size.X / 2 - imgSize.X / 2, 0 );
-                    var baseRectPos = new Vector2( t.TextureRect.HasValue ? t.TextureRect.Value.X : 0,
-                                                   t.TextureRect.HasValue ? t.TextureRect.Value.Y : 0 );
+                    var baseRectPos = new Vector2( t.TextureRect?.X ?? 0, t.TextureRect?.Y ?? 0 );
 
                     var texs = new List<Image>();
                     if ( textures.ContainsKey( t.TexturePath ) )
@@ -309,27 +310,27 @@ namespace GenericModConfigMenu
         {
             string page = modConfig.Options[ currPage ].DisplayName;
             var titleLabel = new Label() { String = modManifest.Name + ( page == "" ? "" : " > " + page ), Bold = true };
-            titleLabel.LocalPosition = new Vector2((Game1.viewport.Width - titleLabel.Measure().X) / 2, 12 + 32);
+            titleLabel.LocalPosition = new Vector2((Game1.uiViewport.Width - titleLabel.Measure().X) / 2, 12 + 32);
             titleLabel.HoverTextColor = titleLabel.IdleTextColor;
             ui.AddChild(titleLabel);
 
             var cancelLabel = new Label() { String = "Cancel", Bold = true };
-            cancelLabel.LocalPosition = new Vector2(Game1.viewport.Width / 2 - 400, Game1.viewport.Height - 50 - 36);
+            cancelLabel.LocalPosition = new Vector2(Game1.uiViewport.Width / 2 - 400, Game1.uiViewport.Height - 50 - 36);
             cancelLabel.Callback = (Element e) => cancel();
             ui.AddChild(cancelLabel);
 
             var defaultLabel = new Label() { String = "Default", Bold = true };
-            defaultLabel.LocalPosition = new Vector2(Game1.viewport.Width / 2 - 200, Game1.viewport.Height - 50 - 36);
+            defaultLabel.LocalPosition = new Vector2(Game1.uiViewport.Width / 2 - 200, Game1.uiViewport.Height - 50 - 36);
             defaultLabel.Callback = (Element e) => revertToDefault();
             ui.AddChild(defaultLabel);
 
             var saveLabel = new Label() { String = "Save", Bold = true };
-            saveLabel.LocalPosition = new Vector2(Game1.viewport.Width / 2 + 50, Game1.viewport.Height - 50 - 36);
+            saveLabel.LocalPosition = new Vector2(Game1.uiViewport.Width / 2 + 50, Game1.uiViewport.Height - 50 - 36);
             saveLabel.Callback = (Element e) => save();
             ui.AddChild(saveLabel);
 
             var saveCloseLabel = new Label() { String = "Save&Close", Bold = true };
-            saveCloseLabel.LocalPosition = new Vector2( Game1.viewport.Width / 2 + 200, Game1.viewport.Height - 50 - 36 );
+            saveCloseLabel.LocalPosition = new Vector2( Game1.uiViewport.Width / 2 + 200, Game1.uiViewport.Height - 50 - 36 );
             saveCloseLabel.Callback = ( Element e ) => { save(); close(); };
             ui.AddChild( saveCloseLabel );
         }
@@ -370,48 +371,49 @@ namespace GenericModConfigMenu
         public override void draw(SpriteBatch b)
         {
             base.draw(b);
-            b.Draw(Game1.staminaRect, new Rectangle(0, 0, Game1.viewport.Width, Game1.viewport.Height), new Color(0, 0, 0, 192));
-            IClickableMenu.drawTextureBox(b, (Game1.viewport.Width - 800) / 2 - 32, 32, 800 + 64, 50 + 20, Color.White);
-            IClickableMenu.drawTextureBox(b, (Game1.viewport.Width - 800) / 2 - 32, Game1.viewport.Height - 50 - 20 - 32, 800 + 64, 50 + 20, Color.White);
+            b.Draw(Game1.staminaRect, new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height), new Color(0, 0, 0, 192));
+            IClickableMenu.drawTextureBox(b, (Game1.uiViewport.Width - 800) / 2 - 32, 32, 800 + 64, 50 + 20, Color.White);
+            IClickableMenu.drawTextureBox(b, (Game1.uiViewport.Width - 800) / 2 - 32, Game1.uiViewport.Height - 50 - 20 - 32, 800 + 64, 50 + 20, Color.White);
 
             ui.Draw(b);
 
             if ( keybindingOpt != null )
             {
-                b.Draw(Game1.staminaRect, new Rectangle(0, 0, Game1.viewport.Width, Game1.viewport.Height), new Color(0, 0, 0, 192));
+                b.Draw(Game1.staminaRect, new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height), new Color(0, 0, 0, 192));
 
-                int boxX = (Game1.viewport.Width - 650) / 2, boxY = (Game1.viewport.Height - 200) / 2;
+                int boxX = (Game1.uiViewport.Width - 650) / 2, boxY = (Game1.uiViewport.Height - 200) / 2;
                 IClickableMenu.drawTextureBox(b, boxX, boxY, 650, 200, Color.White);
 
                 string s = "Rebinding key: " + keybindingOpt.Name;
                 int sw = (int)Game1.dialogueFont.MeasureString(s).X;
-                b.DrawString(Game1.dialogueFont, s, new Vector2((Game1.viewport.Width - sw) / 2, boxY + 20), Game1.textColor);
+                b.DrawString(Game1.dialogueFont, s, new Vector2((Game1.uiViewport.Width - sw) / 2, boxY + 20), Game1.textColor);
 
                 s = "Press a key to rebind";
                 sw = (int)Game1.dialogueFont.MeasureString(s).X;
-                b.DrawString(Game1.dialogueFont, s, new Vector2((Game1.viewport.Width - sw) / 2, boxY + 100), Game1.textColor);
+                b.DrawString(Game1.dialogueFont, s, new Vector2((Game1.uiViewport.Width - sw) / 2, boxY + 100), Game1.textColor);
             }
 
             if ( keybinding2Opt != null )
             {
-                b.Draw( Game1.staminaRect, new Rectangle( 0, 0, Game1.viewport.Width, Game1.viewport.Height ), new Color( 0, 0, 0, 192 ) );
+                b.Draw( Game1.staminaRect, new Rectangle( 0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height ), new Color( 0, 0, 0, 192 ) );
 
-                int boxX = (Game1.viewport.Width - 650) / 2, boxY = (Game1.viewport.Height - 200) / 2;
+                int boxX = (Game1.uiViewport.Width - 650) / 2, boxY = (Game1.uiViewport.Height - 200) / 2;
                 IClickableMenu.drawTextureBox( b, boxX, boxY, 650, 200, Color.White );
 
                 string s = "Rebinding key: " + keybinding2Opt.Name;
                 int sw = (int)Game1.dialogueFont.MeasureString(s).X;
-                b.DrawString( Game1.dialogueFont, s, new Vector2( ( Game1.viewport.Width - sw ) / 2, boxY + 20 ), Game1.textColor );
+                b.DrawString( Game1.dialogueFont, s, new Vector2( ( Game1.uiViewport.Width - sw ) / 2, boxY + 20 ), Game1.textColor );
 
                 s = "Press a key combination to rebind";
                 sw = ( int ) Game1.dialogueFont.MeasureString( s ).X;
-                b.DrawString( Game1.dialogueFont, s, new Vector2( ( Game1.viewport.Width - sw ) / 2, boxY + 100 ), Game1.textColor );
+                b.DrawString( Game1.dialogueFont, s, new Vector2( ( Game1.uiViewport.Width - sw ) / 2, boxY + 100 ), Game1.textColor );
             }
 
             drawMouse(b);
 
             if (Constants.TargetPlatform != GamePlatform.Android)
             {
+                Mod.instance.Helper.Events.Input.ButtonReleased += CheckEscape;
                 foreach ( var label in optHovers )
                 {
                     if (!label.Hover)
@@ -469,11 +471,20 @@ namespace GenericModConfigMenu
             close();
         }
 
+        private void CheckEscape(object sender, ButtonReleasedEventArgs args) {
+            if (DoingKeyBinding) return;
+            if (args.Button.ToString() == "Escape") {
+                Mod.instance.Helper.Events.Input.ButtonReleased -= CheckEscape;
+                cancel();
+                }
+            }
+
         private SimpleModOption<SButton> keybindingOpt;
         private SimpleModOption<KeybindList> keybinding2Opt;
         private Label keybindingLabel;
         private void doKeybindingFor( SimpleModOption<SButton> opt, Label label )
         {
+            DoingKeyBinding = true;
             Game1.playSound("breathin");
             keybindingOpt = opt;
             keybindingLabel = label;
@@ -482,6 +493,7 @@ namespace GenericModConfigMenu
         }
         private void doKeybinding2For( SimpleModOption<KeybindList> opt, Label label )
         {
+            DoingKeyBinding = true;
             Game1.playSound( "breathin" );
             keybinding2Opt = opt;
             keybindingLabel = label;
@@ -491,6 +503,7 @@ namespace GenericModConfigMenu
 
         private void assignKeybinding(object sender, ButtonPressedEventArgs e)
         {
+            DoingKeyBinding = false;
             if ( keybindingOpt == null )
                 return;
             if ( !e.Button.TryGetKeyboard(out Keys keys) && !e.Button.TryGetController(out _) )
@@ -512,6 +525,7 @@ namespace GenericModConfigMenu
         }
         private void assignKeybinding2( object sender, ButtonsChangedEventArgs e )
         {
+            DoingKeyBinding = false;
             if ( keybinding2Opt == null )
                 return;
 
@@ -559,7 +573,7 @@ namespace GenericModConfigMenu
         {
             ui = new RootElement();
 
-            Vector2 newSize = new Vector2(Math.Min(1200, Game1.viewport.Width - 200), Game1.viewport.Height - 128 - 116);
+            Vector2 newSize = new Vector2(Math.Min(1200, Game1.uiViewport.Width - 200), Game1.uiViewport.Height - 128 - 116);
 
             foreach (Element opt in table.Children)
             {
@@ -569,7 +583,7 @@ namespace GenericModConfigMenu
             }
 
             table.Size = newSize;
-            table.LocalPosition = new Vector2((Game1.viewport.Width - table.Size.X) / 2, (Game1.viewport.Height - table.Size.Y) / 2);
+            table.LocalPosition = new Vector2((Game1.uiViewport.Width - table.Size.X) / 2, (Game1.uiViewport.Height - table.Size.Y) / 2);
             table.Scrollbar.Update();
             ui.AddChild(table);
             addDefaultLabels(mod);

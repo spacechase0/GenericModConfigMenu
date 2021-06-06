@@ -44,7 +44,8 @@ namespace GenericModConfigMenu
             ModManifest = manifest;
             RevertToDefault = revertToDefault;
             SaveToFile = saveToFile;
-            Options.Add( "", ActiveRegisteringPage = new ModPage( "" ) );
+            ActiveRegisteringPage = new ModPage("");
+            Options.Add("", ActiveRegisteringPage);
         }
     }
 }
